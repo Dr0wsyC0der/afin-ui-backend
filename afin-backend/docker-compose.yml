@@ -1,0 +1,146 @@
+#version: '3.8'
+#
+#services:
+#  gateway:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    working_dir: /app/services/gateway
+#    environment:
+#      - PYTHONPATH=/app
+#    ports:
+#      - "8000:8000"
+#    depends_on: [auth, models, simulation, analytics]
+#
+#  auth:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    working_dir: /app/services/auth
+#    environment:
+#      - PYTHONPATH=/app
+#      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+#    ports:
+#      - "8001:8000"
+#    depends_on: [db]
+#
+#  models:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    working_dir: /app/services/models
+#    environment:
+#      - PYTHONPATH=/app
+#      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+#    ports:
+#      - "8002:8000"
+#    depends_on: [db]
+#
+#  analytics:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    working_dir: /app/services/analytics
+#    environment:
+#      - PYTHONPATH=/app
+#      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+#    ports:
+#      - "8003:8000"
+#    depends_on: [db]
+#
+#  simulation:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    working_dir: /app/services/simulation
+#    environment:
+#      - PYTHONPATH=/app
+#      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+#    ports:
+#      - "8004:8000"
+#    depends_on: [db]
+#
+#  db:
+#    image: postgres:15
+#    environment:
+#      POSTGRES_DB: afin
+#      POSTGRES_USER: afin
+#      POSTGRES_PASSWORD: secret
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#
+#volumes:
+#  postgres_data:
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /app/services/gateway
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"  # ✅ Только gateway открыт наружу
+    depends_on: [auth, models, simulation, analytics]
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /app/services/auth
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+    # ❌ Убираем ports - сервис доступен только внутри Docker сети
+    depends_on: [db]
+
+  models:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /app/services/models
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+    # ❌ Убираем ports
+    depends_on: [db]
+
+  analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /app/services/analytics
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://afin:secret@db:5432/afin
+    # ❌ Убираем ports
+    depends_on: [db]
+
+  simulation:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /app/services/simulation
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://afin:secret@host.docker.internal:5432/afin
+    # ❌ Убираем ports
+    depends_on: [db]
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: afin
+      POSTGRES_USER: afin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"  # ✅ БД тоже открыта для локальной разработки
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,0 +1,11 @@
+{
+  "name": "afin-ui",
+  "version": "1.0.0",
+  "description": "Прогнозируемое управление бизнес-процессами (frontend-only setup)",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "install:all": "cd frontend && npm install"
+  }
+}
