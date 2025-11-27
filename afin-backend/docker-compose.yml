@@ -84,8 +84,8 @@ services:
     environment:
       - PYTHONPATH=/app
     ports:
-      - "8000:8000"  # ✅ Только gateway открыт наружу
-    depends_on: [auth, models, simulation, analytics]
+      - "8000:8000" # ✅ Только gateway открыт наружу
+    depends_on: [ auth, models, simulation, analytics ]
 
   auth:
     build:
@@ -96,7 +96,7 @@ services:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://afin:secret@db:5432/afin
     # ❌ Убираем ports - сервис доступен только внутри Docker сети
-    depends_on: [db]
+    depends_on: [ db ]
 
   models:
     build:
@@ -107,7 +107,7 @@ services:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://afin:secret@db:5432/afin
     # ❌ Убираем ports
-    depends_on: [db]
+    depends_on: [ db ]
 
   analytics:
     build:
@@ -118,7 +118,7 @@ services:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://afin:secret@db:5432/afin
     # ❌ Убираем ports
-    depends_on: [db]
+    depends_on: [ db ]
 
   simulation:
     build:
@@ -129,7 +129,7 @@ services:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://afin:secret@host.docker.internal:5432/afin
     # ❌ Убираем ports
-    depends_on: [db]
+    depends_on: [ db ]
 
   db:
     image: postgres:15
@@ -138,7 +138,7 @@ services:
       POSTGRES_USER: afin
       POSTGRES_PASSWORD: secret
     ports:
-      - "5432:5432"  # ✅ БД тоже открыта для локальной разработки
+      - "5432:5432" # ✅ БД тоже открыта для локальной разработки
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

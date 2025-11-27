@@ -9,6 +9,7 @@ import {
   User,
   LogOut,
   Activity,
+  Rainbow,
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -29,6 +30,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Панель управления' },
     { path: '/process-models', icon: Workflow, label: 'Модели процессов' },
     { path: '/analytics', icon: BarChart3, label: 'Аналитика' },
+    { path: '/ai-analysis', icon: Rainbow, label: 'Анализирование с AI' },
     { path: '/simulations', icon: PlayCircle, label: 'Симуляции' },
     { path: '/profile', icon: User, label: 'Профиль пользователя' },
   ]
@@ -41,7 +43,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="p-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Activity className="w-6 h-6 text-primary" />
-            <span className="text-2xl font-bold text-primary">afin</span>
+            <span className="text-2xl font-bold text-primary">AFIN</span>
           </Link>
         </div>
 
@@ -54,11 +56,10 @@ const Layout = ({ children }: LayoutProps) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                  ? 'bg-primary text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>

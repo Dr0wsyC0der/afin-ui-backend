@@ -10,6 +10,7 @@ import ProcessEditor from './pages/ProcessEditor'
 import Simulations from './pages/Simulations'
 import Analytics from './pages/Analytics'
 import Profile from './pages/Profile'
+import AiAnalysis from './pages/AiAnalysis'
 
 function App() {
   return (
@@ -56,6 +57,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Analytics />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/ai-analysis"
+            element={
+              <PrivateRoute>
+                <AiAnalysis />
               </PrivateRoute>
             }
           />

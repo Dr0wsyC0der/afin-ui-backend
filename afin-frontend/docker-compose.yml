@@ -1,27 +1,53 @@
+# services:
+#   backend:
+#     build:
+#       context: ./afin-backend
+#       dockerfile: Dockerfile.test
+#     container_name: afin-backend
+#     environment:
+#       # Временный дефолт для локальной разработки; при необходимости замени на свой Postgres URL
+#       - DATABASE_URL=sqlite:///./afin.db
+#     ports:
+#       - "8000:8000"
+#     volumes:
+#       # Храним SQLite-файл вне контейнера, чтобы не терять данные после пересборки
+#       - ./afin-backend/storage/afin.db:/app/afin.db
+
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     container_name: afin-frontend
+#     environment:
+#       # Фронтенд всегда ходит на /api, а nginx внутри контейнера проксирует на backend:8000
+#       - VITE_API_BASE_URL=/api
+#     ports:
+#       - "3000:80"
+#     depends_on:
+#       - backend
 services:
   backend:
     build:
-      context: ./afin-backend
+      context: ../afin-backend
       dockerfile: Dockerfile.test
     container_name: afin-backend
     environment:
-      # Временный дефолт для локальной разработки; при необходимости замени на свой Postgres URL
       - DATABASE_URL=sqlite:///./afin.db
     ports:
       - "8000:8000"
     volumes:
-      # Храним SQLite-файл вне контейнера, чтобы не терять данные после пересборки
-      - ./afin-backend/storage/afin.db:/app/afin.db
+      - ../afin-backend/storage/afin.db:/app/afin.db
+    restart: unless-stopped
 
   frontend:
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
     container_name: afin-frontend
     environment:
-      # Фронтенд всегда ходит на /api, а nginx внутри контейнера проксирует на backend:8000
-      - VITE_API_BASE_URL=/api
+      - VITE_API_BASE_URL=http://backend:8000
     ports:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped

@@ -13,7 +13,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { CheckCircle, Clock, DollarSign, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Clock, Wallet, AlertTriangle } from 'lucide-react'
 
 interface AnalyticsSummary {
   totalCompleted: number
@@ -34,6 +34,13 @@ interface AnalyticsData {
     id: string
     name: string
   }
+}
+
+const formatCurrencyRub = (value?: number) => {
+  if (value == null || isNaN(value)) {
+    return '0 ₽'
+  }
+  return `${Math.round(value).toLocaleString('ru-RU')} ₽`
 }
 
 const Analytics = () => {
@@ -116,8 +123,8 @@ const Analytics = () => {
     },
     {
       title: 'Средняя стоимость процесса',
-      value: `$${summary?.averageCost.toFixed(2) || 0}`,
-      icon: DollarSign,
+      value: formatCurrencyRub(summary?.averageCost),
+      icon: Wallet,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },

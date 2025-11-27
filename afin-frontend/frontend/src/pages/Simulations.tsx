@@ -44,6 +44,13 @@ interface SimulationResult {
   anomalies: { stepId: string; label?: string; expected: number; actual: number }[]
 }
 
+const formatCurrencyRub = (value?: number) => {
+  if (value == null || isNaN(value)) {
+    return '0 ₽'
+  }
+  return `${Math.round(value).toLocaleString('ru-RU')} ₽`
+}
+
 const Simulations = () => {
   const [processModels, setProcessModels] = useState<ProcessModel[]>([])
   const [selectedModelId, setSelectedModelId] = useState('')
@@ -192,7 +199,7 @@ const Simulations = () => {
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg">
                       <div className="text-sm text-gray-600 mb-1">Общая стоимость</div>
-                      <div className="text-2xl font-bold text-gray-900">${summary?.totalCost?.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-gray-900">{formatCurrencyRub(summary?.totalCost)}</div>
                     </div>
                     <div className="p-4 bg-purple-50 rounded-lg">
                       <div className="text-sm text-gray-600 mb-1">ML-предсказания</div>

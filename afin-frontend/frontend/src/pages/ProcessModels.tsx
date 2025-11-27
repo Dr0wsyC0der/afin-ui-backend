@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import axios from 'axios'
@@ -34,18 +34,25 @@ const ProcessModels = () => {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [approvedModelIds, setApprovedModelIds] = useState<Set<string>>(new Set())
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchModels()
+    const loadModels = async () => {
+      await fetchModels()
+    }
+    loadModels()
+  }, [search])
+
+  useEffect(() => {
+    fetchSimulationApprovals()
   }, [])
 
   const fetchModels = async () => {
     try {
+      setLoading(true)
       const params: any = {}
       if (search) params.search = search
-      if (statusFilter !== 'all') params.status = statusFilter
-
       const response = await axios.get('/process-models', { params })
       setModels(response.data)
     } catch (error) {
@@ -55,9 +62,38 @@ const ProcessModels = () => {
     }
   }
 
-  useEffect(() => {
-    fetchModels()
-  }, [search, statusFilter])
+  const fetchSimulationApprovals = async () => {
+    try {
+      const response = await axios.get('/simulations')
+      const approvedIds = new Set<string>()
+      response.data.forEach((simulation: any) => {
+        const modelId =
+          simulation.processModel?.id ??
+          simulation.processModelId ??
+          simulation.processModel?.id
+        if (modelId != null) {
+          approvedIds.add(String(modelId))
+        }
+      })
+      setApprovedModelIds(approvedIds)
+    } catch (error) {
+      console.error('Ошибка загрузки истории симуляций:', error)
+    }
+  }
+
+  const getDerivedStatus = useCallback(
+    (model: ProcessModel) => (approvedModelIds.has(String(model.id)) ? 'approved' : 'draft'),
+    [approvedModelIds]
+  )
+
+  const filteredModels = useMemo(
+    () =>
+      models.filter((model) => {
+        if (statusFilter === 'all') return true
+        return getDerivedStatus(model) === statusFilter
+      }),
+    [models, statusFilter, getDerivedStatus]
+  )
 
   const handleDelete = async (id: string) => {
     if (!confirm('Вы уверены, что хотите удалить эту модель?')) return
@@ -81,19 +117,22 @@ const ProcessModels = () => {
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (model: ProcessModel) => {
+    const status = getDerivedStatus(model)
     const styles = {
-      active: 'bg-green-100 text-green-800',
-      draft: 'bg-yellow-100 text-yellow-800',
-      archived: 'bg-gray-100 text-gray-800',
+      approved: 'bg-green-100 text-green-800',
+      draft: 'bg-gray-100 text-gray-800',
     }
     const labels = {
-      active: 'Активна',
+      approved: 'Одобрена',
       draft: 'Черновик',
-      archived: 'Архивирована',
     }
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          styles[status as keyof typeof styles]
+        }`}
+      >
         {labels[status as keyof typeof labels]}
       </span>
     )
@@ -118,7 +157,7 @@ const ProcessModels = () => {
       }),
       columnHelper.accessor('status', {
         header: 'Статус',
-        cell: (info) => getStatusBadge(info.getValue()),
+        cell: (info) => getStatusBadge(info.row.original),
       }),
       columnHelper.accessor('updatedAt', {
         header: 'Последнее изменение',
@@ -173,7 +212,7 @@ const ProcessModels = () => {
   )
 
   const table = useReactTable({
-    data: models,
+    data: filteredModels,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -235,10 +274,9 @@ const ProcessModels = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              <option value="all">Все статусы</option>
-              <option value="active">Активные</option>
+              <option value="all">Все модели</option>
+              <option value="approved">Одобренные</option>
               <option value="draft">Черновики</option>
-              <option value="archived">Архивированные</option>
             </select>
           </div>
         </div>
@@ -276,7 +314,7 @@ const ProcessModels = () => {
               </tbody>
             </table>
           </div>
-          {models.length === 0 && (
+          {filteredModels.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               Модели процессов не найдены
             </div>
