@@ -12,9 +12,56 @@ body {
   font-family: 'Inter', 'Manrope', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #0f172a);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
   min-height: 100vh;
+}
+
+:root[data-theme='light'] {
+  --color-bg: #f3f4f6;
+  --color-text: #0f172a;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0f172a;
+  --color-text: #e2e8f0;
+}
+
+:root[data-theme='dark'] body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme='dark'] .bg-white {
+  background-color: #1e293b !important;
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .bg-gray-50 {
+  background-color: #020617 !important;
+}
+
+:root[data-theme='dark'] .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+:root[data-theme='dark'] .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+:root[data-theme='dark'] .text-gray-600 {
+  color: #cbd5f5 !important;
+}
+
+:root[data-theme='dark'] .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme='dark'] .border-gray-200 {
+  border-color: #334155 !important;
 }
 

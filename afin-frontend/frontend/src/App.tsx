@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { PreferencesProvider } from './contexts/PreferencesContext'
 import PrivateRoute from './components/PrivateRoute'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -14,9 +15,10 @@ import AiAnalysis from './pages/AiAnalysis'
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
+    <PreferencesProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
@@ -76,10 +78,11 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </PreferencesProvider>
   )
 }
 

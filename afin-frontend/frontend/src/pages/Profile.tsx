@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Layout from '../components/Layout'
 import axios from 'axios'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Lock, Bell, Settings, Save } from 'lucide-react'
+import { User, Lock, Bell, Settings, Save, Globe2, Moon } from 'lucide-react'
+import { usePreferences } from '../contexts/PreferencesContext'
 
 const Profile = () => {
   const { user, updateUser } = useAuth()
+  const { language, theme, setLanguage, setTheme, t } = usePreferences()
   const [activeTab, setActiveTab] = useState('personal')
   const [saving, setSaving] = useState(false)
 
@@ -91,10 +93,22 @@ const Profile = () => {
     { id: 'settings', label: 'Настройки приложения', icon: Settings },
   ]
 
+  const languageLabel = useMemo(() => (language === 'ru' ? 'Русский' : 'English'), [language])
+  const themeLabel = useMemo(() => {
+    switch (theme) {
+      case 'dark':
+        return 'Тёмная'
+      case 'auto':
+        return 'Автоматически'
+      default:
+        return 'Светлая'
+    }
+  }, [theme])
+
   return (
     <Layout>
       <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Профиль пользователя</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('profileTitle')}</h1>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           {/* Profile Header */}
@@ -109,7 +123,9 @@ const Profile = () => {
                   {user?.firstName} {user?.lastName}
                 </h2>
                 <p className="text-blue-100">{user?.email}</p>
-                <p className="text-sm text-blue-200 mt-1">Роль: {user?.role || 'Пользователь'}</p>
+                <p className="text-sm text-blue-200 mt-1">
+                  {t('profileRole')}: {user?.role || 'Пользователь'}
+                </p>
               </div>
             </div>
           </div>
@@ -306,20 +322,51 @@ const Profile = () => {
 
             {activeTab === 'settings' && (
               <div className="max-w-2xl space-y-4">
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <div className="font-medium text-gray-900 mb-2">Язык интерфейса</div>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                <div className="p-4 border border-gray-200 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900">Язык интерфейса</div>
+                      <p className="text-sm text-gray-500">
+                        Текущий язык: <span className="font-semibold">{languageLabel}</span>
+                      </p>
+                    </div>
+                    <Globe2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as 'ru' | 'en')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
                     <option value="ru">Русский</option>
                     <option value="en">English</option>
                   </select>
+                  <p className="text-xs text-gray-500">
+                    Язык мгновенно применяется ко всем поддерживаемым элементам интерфейса.
+                  </p>
                 </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <div className="font-medium text-gray-900 mb-2">Тема оформления</div>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                <div className="p-4 border border-gray-200 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900">Тема оформления</div>
+                      <p className="text-sm text-gray-500">
+                        Активная тема: <span className="font-semibold">{themeLabel}</span>
+                      </p>
+                    </div>
+                    <Moon className="w-5 h-5 text-primary" />
+                  </div>
+                  <select
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
                     <option value="light">Светлая</option>
                     <option value="dark">Тёмная</option>
                     <option value="auto">Автоматически</option>
                   </select>
+                  <p className="text-xs text-gray-500">
+                    Тёмный режим охватывает фон, текст и основные карточки. Опция «Автоматически» следует системным
+                    настройкам устройства.
+                  </p>
                 </div>
               </div>
             )}

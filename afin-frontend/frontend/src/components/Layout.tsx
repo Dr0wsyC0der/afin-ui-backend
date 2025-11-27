@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { usePreferences } from '../contexts/PreferencesContext'
 import {
   LayoutDashboard,
   Workflow,
@@ -18,6 +19,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const { user, logout } = useAuth()
+  const { t } = usePreferences()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -27,12 +29,12 @@ const Layout = ({ children }: LayoutProps) => {
   }
 
   const menuItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Панель управления' },
-    { path: '/process-models', icon: Workflow, label: 'Модели процессов' },
-    { path: '/analytics', icon: BarChart3, label: 'Аналитика' },
-    { path: '/ai-analysis', icon: Rainbow, label: 'Анализирование с AI' },
-    { path: '/simulations', icon: PlayCircle, label: 'Симуляции' },
-    { path: '/profile', icon: User, label: 'Профиль пользователя' },
+    { path: '/dashboard', icon: LayoutDashboard, label: t('navDashboard') },
+    { path: '/process-models', icon: Workflow, label: t('navProcessModels') },
+    { path: '/analytics', icon: BarChart3, label: t('navAnalytics') },
+    { path: '/ai-analysis', icon: Rainbow, label: t('navPredictive') },
+    { path: '/simulations', icon: PlayCircle, label: t('navSimulations') },
+    { path: '/profile', icon: User, label: t('navProfile') },
   ]
 
   return (

@@ -57,6 +57,7 @@ const Simulations = () => {
   const [simulationHistory, setSimulationHistory] = useState<SimulationResult[]>([])
   const [running, setRunning] = useState(false)
   const [currentSimulation, setCurrentSimulation] = useState<SimulationResult | null>(null)
+  const [simulationMode, setSimulationMode] = useState<'classic' | 'ai'>('classic')
 
   const summary = currentSimulation?.summary
   const overloaded = summary?.overloadedEmployees ?? []
@@ -108,6 +109,7 @@ const Simulations = () => {
     try {
       const response = await axios.post('/simulations', {
         processModelId: Number(selectedModelId),
+        mode: simulationMode,
       })
       setCurrentSimulation(response.data)
       setSimulationHistory((prev) => [response.data, ...prev])
@@ -143,6 +145,41 @@ const Simulations = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип симуляции</label>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setSimulationMode('classic')}
+                      className={`w-full border rounded-lg px-4 py-3 text-left transition-colors ${
+                        simulationMode === 'classic'
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-gray-200 hover:border-primary/40 text-gray-700'
+                      }`}
+                    >
+                      <div className="font-semibold">Расчётная симуляция</div>
+                      <p className="text-xs text-gray-500">
+                        Детальный расчёт по шагам без применения обученных моделей.
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSimulationMode('ai')}
+                      className={`w-full border rounded-lg px-4 py-3 text-left transition-colors ${
+                        simulationMode === 'ai'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-transparent bg-clip-text">
+                        Симуляция с AI
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Мгновенный подбор сценариев и прогнозирование узких мест с помощью ML.
+                      </p>
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={handleRunSimulation}

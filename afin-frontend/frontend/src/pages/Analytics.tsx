@@ -200,7 +200,7 @@ const Analytics = () => {
           {/* Resource Utilization */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Утилизация ресурсов по процессу
+              Использование ресурсов по процессу
             </h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={processChartData}>
