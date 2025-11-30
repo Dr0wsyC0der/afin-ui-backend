@@ -199,4 +199,55 @@ body {
   border-color: #334155 !important;
 }
 
+/* Переопределение темной темы для Landing - принудительно светлые цвета */
+[data-landing="true"] .text-gray-900 {
+  color: #111827 !important;
+}
+
+[data-landing="true"] .text-gray-700 {
+  color: #374151 !important;
+}
+
+[data-landing="true"] .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+[data-landing="true"] .bg-white {
+  background-color: #ffffff !important;
+}
+
+/* Переопределяем темную тему для Landing страницы */
+:root[data-theme='dark'] [data-landing="true"] .text-gray-900 {
+  color: #111827 !important;
+}
+
+:root[data-theme='dark'] [data-landing="true"] .text-gray-700 {
+  color: #374151 !important;
+}
+
+:root[data-theme='dark'] [data-landing="true"] .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+:root[data-theme='dark'] [data-landing="true"] .bg-white {
+  background-color: #ffffff !important;
+}
+
+/* Принудительно устанавливаем primary цвет для Landing */
+[data-landing="true"] .text-primary {
+  color: #0055FF !important;
+}
+
+[data-landing="true"] .border-primary {
+  border-color: #0055FF !important;
+}
+
+:root[data-theme='dark'] [data-landing="true"] .text-primary {
+  color: #0055FF !important;
+}
+
+:root[data-theme='dark'] [data-landing="true"] .border-primary {
+  border-color: #0055FF !important;
+}
+
 

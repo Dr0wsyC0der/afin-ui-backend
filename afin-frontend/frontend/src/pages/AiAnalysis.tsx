@@ -94,19 +94,8 @@ const PredictiveAnalytics = () => {
 
       const { results } = response.data
 
-      // Формируем сообщение с результатами - упрощенный вариант
-      let resultText = `Файл «${file.name}» обработан.\n\n`
-      resultText += 'Предсказания нейросети:\n\n'
-
-      // Добавляем только название процесса и вероятность
-      results.forEach((result: ProcessPrediction, index: number) => {
-        if (result.error) {
-          resultText += `${index + 1}. ${result.process_name}: Ошибка - ${result.error}\n`
-        } else {
-          const probability = (result.delay_probability * 100).toFixed(1)
-          resultText += `${index + 1}. ${result.process_name} - ${probability}%\n`
-        }
-      })
+      // Формируем короткое сообщение без списка
+      const resultText = `Файл «${file.name}» обработан.\n\nПредсказания нейросети:`
 
       const systemMessage: ChatMessage = {
         id: `file-${Date.now()}`,
@@ -272,13 +261,29 @@ const PredictiveAnalytics = () => {
                     <div className="mt-3 space-y-2">
                       {message.predictions.map((pred, idx) => {
                         if (pred.error) return null
+                        const probability = pred.delay_probability * 100
+                        // Цветовая маркировка: зеленый < 40%, желтый 40-60%, красный > 60%
+                        let bgColor = 'bg-green-50'
+                        let borderColor = 'border-green-300'
+                        let textColor = 'text-green-800'
+                        
+                        if (probability >= 40 && probability <= 60) {
+                          bgColor = 'bg-yellow-50'
+                          borderColor = 'border-yellow-300'
+                          textColor = 'text-yellow-800'
+                        } else if (probability > 60) {
+                          bgColor = 'bg-red-50'
+                          borderColor = 'border-red-300'
+                          textColor = 'text-red-800'
+                        }
+                        
                         return (
                           <div
                             key={idx}
-                            className="p-2 rounded-lg text-xs bg-blue-50 border border-blue-200 text-blue-800"
+                            className={`p-2 rounded-lg text-xs ${bgColor} border ${borderColor} ${textColor}`}
                           >
                             <div className="font-semibold">
-                              {pred.process_name} - {(pred.delay_probability * 100).toFixed(1)}%
+                              {pred.process_name} - {probability.toFixed(1)}%
                             </div>
                           </div>
                         )

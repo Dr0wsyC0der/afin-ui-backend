@@ -1,7 +1,22 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Activity, Zap, BarChart3, PlayCircle, Shield, Clock } from 'lucide-react'
 
 const Landing = () => {
+  // Принудительно устанавливаем светлую тему для Landing страницы
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'light')
+    return () => {
+      // Восстанавливаем сохраненную тему при размонтировании
+      const savedTheme = localStorage.getItem('afin_theme') || 'light'
+      if (savedTheme === 'auto') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+      } else {
+        document.documentElement.setAttribute('data-theme', savedTheme)
+      }
+    }
+  }, [])
   const features = [
     {
       icon: Zap,
@@ -36,7 +51,7 @@ const Landing = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white" data-landing="true">
       {/* Header */}
       <header className="container mx-auto px-6 py-4">
         <nav className="flex items-center justify-between">
