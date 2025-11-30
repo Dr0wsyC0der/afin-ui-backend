@@ -2,14 +2,25 @@
 from typing import List
 
 import numpy as np
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from sklearn.linear_model import LinearRegression
 from sqlalchemy.orm import Session
+import json
+import csv
+import io
 
 from shared.database import get_db
 from services.models.models import ProcessModel
 from services.simulation.models import SimulationRun
-from .schemas import PredictRequest, PredictResponse
+from .schemas import (
+    PredictRequest,
+    PredictResponse,
+    DelayPredictRequest,
+    DelayPredictResponse,
+    FileProcessResponse,
+    ProcessPredictionResult,
+)
+from .ml_model_loader import predict_delay, process_file_data
 
 router = APIRouter()
 
@@ -115,3 +126,68 @@ def analytics_summary(db: Session = Depends(get_db)):
         "averageCost": round(avg_cost, 2),
         "bottlenecksCount": bottlenecks,
     }
+
+
+@router.post("/predict-delay", response_model=DelayPredictResponse)
+def predict_delay_endpoint(payload: DelayPredictRequest):
+    """Предсказывает вероятность задержки для одного процесса"""
+    try:
+        result = predict_delay(
+            expected_duration=payload.expected_duration,
+            process_name=payload.process_name,
+            role=payload.role,
+            department=payload.department,
+            status=payload.status,
+            month=payload.month,
+            weekday=payload.weekday,
+        )
+        return DelayPredictResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка предсказания: {str(e)}")
+
+
+@router.post("/process-file", response_model=FileProcessResponse)
+async def process_file(file: UploadFile = File(...)):
+    """Обрабатывает загруженный файл (CSV или JSON) и возвращает предсказания для каждого процесса"""
+    try:
+        # Читаем содержимое файла
+        contents = await file.read()
+        file_extension = file.filename.split(".")[-1].lower() if file.filename else ""
+
+        # Парсим файл в зависимости от формата
+        if file_extension == "json":
+            try:
+                data = json.loads(contents.decode("utf-8"))
+                # Если это список, используем его, иначе оборачиваем в список
+                if not isinstance(data, list):
+                    data = [data]
+            except json.JSONDecodeError as e:
+                raise HTTPException(status_code=400, detail=f"Ошибка парсинга JSON: {str(e)}")
+        elif file_extension == "csv":
+            try:
+                # Парсим CSV
+                csv_content = contents.decode("utf-8")
+                csv_reader = csv.DictReader(io.StringIO(csv_content))
+                data = list(csv_reader)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Ошибка парсинга CSV: {str(e)}")
+        else:
+            raise HTTPException(status_code=400, detail="Поддерживаются только файлы CSV или JSON")
+
+        # Обрабатываем данные
+        results = process_file_data(data)
+
+        # Формируем ответ
+        successful = sum(1 for r in results if "error" not in r)
+        failed = len(results) - successful
+
+        return FileProcessResponse(
+            results=[ProcessPredictionResult(**r) for r in results],
+            total_processed=len(results),
+            successful=successful,
+            failed=failed,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки файла: {str(e)}")

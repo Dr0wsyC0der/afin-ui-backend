@@ -2,26 +2,20 @@
 
 WORKDIR /app
 
+# Устанавливаем системные зависимости для LightGBM
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Копируем весь проект
 COPY . .
 
-# Устанавливаем зависимости
-RUN pip install --no-cache-dir \
-    fastapi==0.104.1 \
-    uvicorn[standard]==0.24.0 \
-    sqlalchemy==2.0.23 \
-    psycopg2-binary==2.9.9 \
-    bcrypt==3.2.2 \
-    python-jose[cryptography]==3.3.0 \
-    passlib[bcrypt]==1.7.4 \
+# Копируем requirements.txt и устанавливаем зависимости
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
     python-multipart==0.0.6 \
-    pydantic[email]==2.5.0 \
-    pydantic-settings==2.1.0 \
-    httpx==0.25.2 \
-    scikit-learn==1.3.2 \
-    pandas==2.1.3 \
-    numpy==1.26.2 \
-    simpy==4.1.1
+    bcrypt==3.2.2
 
 # Устанавливаем PYTHONPATH
 ENV PYTHONPATH=/app

@@ -1,6 +1,7 @@
 import { DragEvent, useRef, useState } from 'react'
 import Layout from '../components/Layout'
-import { MessageSquare, Send, Sparkles, UploadCloud } from 'lucide-react'
+import { MessageSquare, Send, Sparkles, UploadCloud, Loader2 } from 'lucide-react'
+import axios from 'axios'
 
 type ChatRole = 'system' | 'user' | 'assistant'
 
@@ -8,6 +9,18 @@ interface ChatMessage {
   id: string
   role: ChatRole
   text: string
+  predictions?: ProcessPrediction[]
+}
+
+interface ProcessPrediction {
+  process_name: string
+  delay_probability: number
+  prediction: string
+  will_be_delayed: boolean
+  expected_duration?: number
+  role?: string
+  department?: string
+  error?: string
 }
 
 const PredictiveAnalytics = () => {
@@ -24,6 +37,8 @@ const PredictiveAnalytics = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number; type: string } | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const formatFileSize = (bytes: number) => {
@@ -55,6 +70,68 @@ const PredictiveAnalytics = () => {
     }, 600)
   }
 
+  const processFile = async (file: File) => {
+    setProcessing(true)
+    setFileError(null)
+
+    // Добавляем сообщение о начале обработки
+    const processingMessage: ChatMessage = {
+      id: `processing-${Date.now()}`,
+      role: 'system',
+      text: `Файл «${file.name}» обрабатывается...`,
+    }
+    setChat((prev) => [...prev, processingMessage])
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await axios.post('/analytics/process-file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const { results } = response.data
+
+      // Формируем сообщение с результатами - упрощенный вариант
+      let resultText = `Файл «${file.name}» обработан.\n\n`
+      resultText += 'Предсказания нейросети:\n\n'
+
+      // Добавляем только название процесса и вероятность
+      results.forEach((result: ProcessPrediction, index: number) => {
+        if (result.error) {
+          resultText += `${index + 1}. ${result.process_name}: Ошибка - ${result.error}\n`
+        } else {
+          const probability = (result.delay_probability * 100).toFixed(1)
+          resultText += `${index + 1}. ${result.process_name} - ${probability}%\n`
+        }
+      })
+
+      const systemMessage: ChatMessage = {
+        id: `file-${Date.now()}`,
+        role: 'assistant',
+        text: resultText,
+        predictions: results,
+      }
+
+      setChat((prev) => [...prev, systemMessage])
+      setChatUnlocked(true)
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.detail || error.message || 'Ошибка при обработке файла'
+      setFileError(errorMessage)
+      const errorChatMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        role: 'system',
+        text: `Ошибка обработки файла: ${errorMessage}`,
+      }
+      setChat((prev) => [...prev, errorChatMessage])
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const validateAndStoreFile = (file: File) => {
     const allowedTypes = ['application/json', 'text/csv', 'application/vnd.ms-excel', 'text/plain']
     const extension = file.name.split('.').pop()?.toLowerCase()
@@ -64,13 +141,21 @@ const PredictiveAnalytics = () => {
     }
     setFileError(null)
     setFileInfo({ name: file.name, size: file.size, type: extension || file.type })
-    const systemMessage: ChatMessage = {
-      id: `file-${Date.now()}`,
+    setUploadedFile(file)
+
+    // Добавляем сообщение о загрузке
+    const loadingMessage: ChatMessage = {
+      id: `loading-${Date.now()}`,
       role: 'system',
-      text: `Файл «${file.name}» успешно загружен. AI использует его для предиктивной аналитики.`,
+      text: `Файл «${file.name}» загружен. Нажмите "Начать анализ" для обработки.`,
     }
-    setChat((prev) => [...prev, systemMessage])
-    setChatUnlocked(true)
+    setChat((prev) => [...prev, loadingMessage])
+  }
+
+  const handleStartAnalysis = () => {
+    if (uploadedFile) {
+      processFile(uploadedFile)
+    }
   }
 
   const handleFileInput = (files: FileList | null) => {
@@ -131,10 +216,17 @@ const PredictiveAnalytics = () => {
               />
             </label>
             <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full mt-4 px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors"
+              onClick={() => {
+                if (uploadedFile && !processing) {
+                  handleStartAnalysis()
+                } else {
+                  fileInputRef.current?.click()
+                }
+              }}
+              disabled={processing}
+              className="w-full mt-4 px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Выбрать файл
+              {uploadedFile && !processing ? 'Начать анализ' : 'Выбрать файл'}
             </button>
             {fileInfo && (
               <div className="mt-4 p-3 border border-green-200 bg-green-50 rounded-lg text-sm text-green-800">
@@ -149,13 +241,12 @@ const PredictiveAnalytics = () => {
                 {fileError}
               </div>
             )}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!fileInfo}
-              className="mt-4 w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {fileInfo ? 'Файл готов к анализу' : 'Загрузите файл для продолжения'}
-            </button>
+            {processing && (
+              <div className="mt-4 p-3 border border-blue-200 bg-blue-50 rounded-lg text-sm text-blue-800 flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Обработка файла...</span>
+              </div>
+            )}
             {!chatUnlocked && (
               <p className="text-xs text-gray-500 mt-2">
                 После загрузки файла откроется чат для вопросов и уточнений.
@@ -177,6 +268,23 @@ const PredictiveAnalytics = () => {
                   }`}
                 >
                   <p className="whitespace-pre-line text-sm leading-relaxed">{message.text}</p>
+                  {message.predictions && message.predictions.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {message.predictions.map((pred, idx) => {
+                        if (pred.error) return null
+                        return (
+                          <div
+                            key={idx}
+                            className="p-2 rounded-lg text-xs bg-blue-50 border border-blue-200 text-blue-800"
+                          >
+                            <div className="font-semibold">
+                              {pred.process_name} - {(pred.delay_probability * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

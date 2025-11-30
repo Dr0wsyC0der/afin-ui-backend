@@ -20,7 +20,13 @@ const Login = () => {
       await login(email, password)
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ошибка входа')
+      console.error('Login error:', err)
+      const errorMessage = 
+        err.response?.data?.detail || 
+        err.response?.data?.message || 
+        err.message || 
+        'Ошибка входа. Проверьте email и пароль.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

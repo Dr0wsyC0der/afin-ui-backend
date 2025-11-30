@@ -1,0 +1,20 @@
+[
+  "expected_duration",
+  "month",
+  "weekday",
+  "status_blocked",
+  "status_completed",
+  "status_in_progress",
+  "process_name_Закупка оборудования",
+  "process_name_Пополнение счета / оплата поставщика",
+  "process_name_Согласование контракта с клиентом",
+  "process_name_Финансовое планирование / изменение бюджета",
+  "role_Director",
+  "role_Finance",
+  "role_IT Operations",
+  "role_Procurement",
+  "department_Management",
+  "department_dept_finance",
+  "department_dept_itops",
+  "department_dept_procurement"
+]

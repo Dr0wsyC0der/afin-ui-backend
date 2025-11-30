@@ -67,8 +67,14 @@ const PreferencesContext = createContext<PreferencesContextValue>({
 
 const applyThemeToDocument = (theme: Theme) => {
   const root = document.documentElement
-  const resolvedTheme =
-    theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : theme
+  let resolvedTheme: 'light' | 'dark'
+  
+  if (theme === 'auto') {
+    resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  } else {
+    resolvedTheme = theme
+  }
+  
   root.dataset.theme = resolvedTheme
   root.setAttribute('data-theme-source', theme)
 }
@@ -107,9 +113,10 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
   }, [theme])
 
   useEffect(() => {
+    // Применяем настройки при первой загрузке
     document.documentElement.lang = language
     applyThemeToDocument(theme)
-  }, [])
+  }, [language, theme])
 
   const setLanguage = useCallback((value: Language) => {
     setLanguageState(value)

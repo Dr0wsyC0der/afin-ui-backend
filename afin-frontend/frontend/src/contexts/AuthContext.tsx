@@ -51,17 +51,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const login = async (email: string, password: string) => {
-    // FastAPI /api/auth/login -> { access_token, token_type }
-    const response = await axios.post('/auth/login', { email, password })
-    const { access_token } = response.data
+    try {
+      // FastAPI /api/auth/login -> { access_token, token_type }
+      const response = await axios.post('/auth/login', { email, password })
+      const { access_token } = response.data
 
-    localStorage.setItem('accessToken', access_token)
-    // refreshToken в текущем FastAPI-бэке нет
-    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
+      if (!access_token) {
+        throw new Error('Токен не получен от сервера')
+      }
 
-    // Дополнительно подтягиваем пользователя
-    const me = await axios.get('/auth/me')
-    setUser(me.data)
+      localStorage.setItem('accessToken', access_token)
+      // refreshToken в текущем FastAPI-бэке нет
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
+
+      // Дополнительно подтягиваем пользователя
+      const me = await axios.get('/auth/me')
+      setUser(me.data)
+    } catch (error: any) {
+      // Пробрасываем ошибку дальше с правильным форматом
+      if (error.response) {
+        // Сервер вернул ошибку
+        const errorMessage = error.response.data?.detail || error.response.data?.message || 'Ошибка входа'
+        throw new Error(errorMessage)
+      } else if (error.request) {
+        // Запрос был отправлен, но ответа не получено
+        throw new Error('Не удалось подключиться к серверу. Убедитесь, что backend запущен на порту 8000')
+      } else {
+        // Ошибка при настройке запроса
+        throw new Error(error.message || 'Ошибка при входе в систему')
+      }
+    }
   }
 
   const signup = async (email: string, password: string, _firstName: string, _lastName?: string) => {

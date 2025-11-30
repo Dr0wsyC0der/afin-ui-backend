@@ -105,6 +105,12 @@ const Simulations = () => {
       return
     }
 
+    // Блокируем запуск симуляции с AI
+    if (simulationMode === 'ai') {
+      alert('Симуляция с AI находится в разработке')
+      return
+    }
+
     setRunning(true)
     try {
       const response = await axios.post('/simulations', {
@@ -165,12 +171,9 @@ const Simulations = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSimulationMode('ai')}
-                      className={`w-full border rounded-lg px-4 py-3 text-left transition-colors ${
-                        simulationMode === 'ai'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-primary/40'
-                      }`}
+                      onClick={() => {}}
+                      disabled={true}
+                      className="w-full border rounded-lg px-4 py-3 text-left transition-colors border-gray-200 opacity-60 cursor-not-allowed relative"
                     >
                       <div className="font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-transparent bg-clip-text">
                         Симуляция с AI
@@ -178,6 +181,9 @@ const Simulations = () => {
                       <p className="text-xs text-gray-500">
                         Мгновенный подбор сценариев и прогнозирование узких мест с помощью ML.
                       </p>
+                      <span className="absolute top-2 right-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-300">
+                        В разработке
+                      </span>
                     </button>
                   </div>
                 </div>
