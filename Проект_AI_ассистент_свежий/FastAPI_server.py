@@ -4,6 +4,8 @@ import json
 import pandas as pd
 from model_and_scaler import model, scaler, model_features
 
+from LLM.model_predictor import generate_explanation
+
 import traceback
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +24,16 @@ class TaskFeatures(BaseModel):
     month: int
     weekday: int
 
+class LLMRequest(BaseModel):
+    expected_duration: float
+    process_name: str
+    role: str
+    department: str
+    status: str = "active"
+    month: int | None = None
+    weekday: int | None = None
+    delay_probability: float
+    prediction: str
 # -----------------------------
 # 4️⃣ Обработка запроса
 # -----------------------------
@@ -77,7 +89,35 @@ def predict_delay(task: TaskFeatures):
         traceback.print_exc()
         return {"error": str(e)}
 
+@app.post("/explain_delay")
+def explain_delay(req: LLMRequest):
+    try:
+        logging.info("🔄 Получен запрос на объяснение задержки")
+
+        # Преобразуем Pydantic модель в словарь
+        input_data = req.model_dump()
+
+        # Генерируем объяснение с помощью LLM
+        explanation = generate_explanation(input_data)
+
+        logging.info("✅ Объяснение успешно сгенерировано")
+
+        return {
+            "success": True,
+            "explanation": explanation,
+            "input_data": input_data
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Ошибка при генерации объяснения: {str(e)}")
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e),
+            "explanation": None
+        }
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("FastAPI_server:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("FastAPI_server:app", host="0.0.0.0", port=8000, reload=False)

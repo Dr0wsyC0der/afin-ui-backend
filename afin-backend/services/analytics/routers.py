@@ -19,8 +19,13 @@ from .schemas import (
     DelayPredictResponse,
     FileProcessResponse,
     ProcessPredictionResult,
+    LLMFileExplainRequest,
+    LLMFileExplainResponse,
+    LLMChatRequest,
+    LLMChatResponse,
 )
 from .ml_model_loader import predict_delay, process_file_data
+from .llm_client import explain_single_prediction, explain_with_question
 
 router = APIRouter()
 
@@ -191,3 +196,95 @@ async def process_file(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки файла: {str(e)}")
+
+
+@router.post("/llm/explain-file", response_model=LLMFileExplainResponse)
+async def llm_explain_file(payload: LLMFileExplainRequest) -> LLMFileExplainResponse:
+    """
+    Первичное объяснение результатов после загрузки файла.
+
+    Берём самую «рисковую» запись (максимальная delay_probability) и
+    просим LLM объяснить её понятным языком.
+    """
+    if not payload.results:
+        raise HTTPException(status_code=400, detail="Список результатов пуст.")
+
+    # Фильтруем записи без ошибок и без delay_probability
+    valid_results = [
+        r
+        for r in payload.results
+        if r.error is None and r.delay_probability is not None and r.prediction is not None
+    ]
+
+    if not valid_results:
+        return LLMFileExplainResponse(
+            explanation="Не удалось сформировать объяснение: в результатах нет валидных предсказаний."
+        )
+
+    # Выбираем запись с максимальной вероятностью задержки
+    top = max(valid_results, key=lambda r: r.delay_probability or 0.0)
+
+    # Используем текущие дату и время, если не указаны
+    import datetime
+    current_month = datetime.datetime.now().month
+    current_weekday = datetime.datetime.now().weekday()
+    
+    base_context = {
+        "expected_duration": top.expected_duration,
+        "process_name": top.process_name,
+        "role": top.role,
+        "department": top.department,
+        "status": "active",
+        "month": current_month,
+        "weekday": current_weekday,
+        "delay_probability": top.delay_probability,
+        "prediction": top.prediction,
+    }
+
+    try:
+        explanation = await explain_single_prediction(base_context)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Ошибка при обращении к LLM-сервису: {exc}",
+        )
+
+    return LLMFileExplainResponse(explanation=explanation)
+
+
+@router.post("/llm/chat", response_model=LLMChatResponse)
+async def llm_chat(payload: LLMChatRequest) -> LLMChatResponse:
+    """
+    Обработка последующих сообщений пользователя в чате.
+
+    Мы даём LLM числовой контекст по одной задаче + вопрос пользователя.
+    """
+    context = payload.context
+
+    # Используем текущие дату и время, если не указаны
+    import datetime
+    current_month = datetime.datetime.now().month
+    current_weekday = datetime.datetime.now().weekday()
+    
+    base_context = {
+        "expected_duration": context.expected_duration,
+        "process_name": context.process_name,
+        "role": context.role,
+        "department": context.department,
+        "status": "active",
+        "month": current_month,
+        "weekday": current_weekday,
+        "delay_probability": context.delay_probability,
+        "prediction": context.prediction,
+    }
+
+    try:
+        answer = await explain_with_question(base_context, payload.message)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Ошибка при обращении к LLM-сервису: {exc}",
+        )
+
+    return LLMChatResponse(answer=answer)
+

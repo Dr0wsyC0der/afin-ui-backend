@@ -52,3 +52,6 @@ python -c "from services.auth.crud import create_user; from shared.database impo
 3. Попробуйте войти через `/api/auth/login`
 
 
+
+
+

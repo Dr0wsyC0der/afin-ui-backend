@@ -53,3 +53,38 @@ class FileProcessResponse(BaseModel):
     failed: int
 
 
+class LLMFileExplainRequest(BaseModel):
+    """
+    Запрос на первичное объяснение результатов после загрузки файла.
+
+    На фронтэнде после обработки файла мы отправляем список предсказаний
+    (минимум одного) и хотим получить от LLM человеко‑понятное резюме.
+    """
+
+    results: List[ProcessPredictionResult]
+
+
+class LLMFileExplainResponse(BaseModel):
+    explanation: str
+
+
+class LLMChatRequest(BaseModel):
+    """
+    Запрос для последующих сообщений пользователя в чате.
+
+    Мы передаём:
+    - message: текст вопроса пользователя
+    - context: один «репрезентативный» ProcessPredictionResult
+      (например, с максимальной вероятностью задержки), чтобы
+      LLM имел числовой контекст о рисках.
+    """
+
+    message: str
+    context: ProcessPredictionResult
+
+
+class LLMChatResponse(BaseModel):
+    answer: str
+
+
+

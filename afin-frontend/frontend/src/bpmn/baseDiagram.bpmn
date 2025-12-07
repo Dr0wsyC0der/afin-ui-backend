@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  id="Definitions_Company"
+  targetNamespace="https://afin.io/bpmn">
+  <bpmn:collaboration id="Collaboration_Company">
+    <bpmn:participant id="Participant_Company" name="Компания" processRef="Process_Company" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Company" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Company">
+      <bpmn:lane id="Lane_IT" name="IT Operations" />
+      <bpmn:lane id="Lane_Finance" name="Finance" />
+      <bpmn:lane id="Lane_Procurement" name="Procurement" />
+      <bpmn:lane id="Lane_Director" name="Director" />
+    </bpmn:laneSet>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Company">
+    <bpmndi:BPMNPlane id="BPMNPlane_Company" bpmnElement="Collaboration_Company">
+      <bpmndi:BPMNShape id="Participant_Company_di" bpmnElement="Participant_Company" isHorizontal="true">
+        <dc:Bounds x="120" y="80" width="1200" height="520" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_IT_di" bpmnElement="Lane_IT" isHorizontal="true">
+        <dc:Bounds x="150" y="80" width="1170" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Finance_di" bpmnElement="Lane_Finance" isHorizontal="true">
+        <dc:Bounds x="150" y="200" width="1170" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Procurement_di" bpmnElement="Lane_Procurement" isHorizontal="true">
+        <dc:Bounds x="150" y="320" width="1170" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Director_di" bpmnElement="Lane_Director" isHorizontal="true">
+        <dc:Bounds x="150" y="440" width="1170" height="120" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+

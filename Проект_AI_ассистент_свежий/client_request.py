@@ -21,3 +21,4 @@ payload = {
 r = requests.post(url, headers=headers, json=payload)
 print("Status:", r.status_code)
 print("Text:", r.text)
+print("Type:",type(r.text))

@@ -1,0 +1,37 @@
+{
+  "name": "AfinCustom",
+  "prefix": "custom",
+  "uri": "https://afin.io/schema/custom",
+  "types": [
+    {
+      "name": "TaskProperties",
+      "extends": [
+        "bpmn:Task",
+        "bpmn:SubProcess"
+      ],
+      "properties": [
+        {
+          "name": "expectedDuration",
+          "isAttr": false,
+          "type": "Integer"
+        },
+        {
+          "name": "employeeId",
+          "isAttr": false,
+          "type": "String"
+        },
+        {
+          "name": "role",
+          "isAttr": false,
+          "type": "String"
+        },
+        {
+          "name": "stepId",
+          "isAttr": false,
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}
+

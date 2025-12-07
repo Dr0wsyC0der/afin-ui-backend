@@ -94,3 +94,6 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/auth/register" `
 - http://localhost:8000/api/auth/me - текущий пользователь (требует авторизации)
 
 
+
+
+

@@ -39,6 +39,7 @@ const PredictiveAnalytics = () => {
   const [fileError, setFileError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [lastContext, setLastContext] = useState<ProcessPrediction | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const formatFileSize = (bytes: number) => {
@@ -48,7 +49,7 @@ const PredictiveAnalytics = () => {
   }
 
   const handleSendMessage = async () => {
-    if (!chatUnlocked || !input.trim()) return
+    if (!chatUnlocked || !input.trim() || !lastContext) return
     const messageText = input.trim()
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -59,15 +60,30 @@ const PredictiveAnalytics = () => {
     setInput('')
     setSending(true)
 
-    setTimeout(() => {
+    try {
+      const response = await axios.post('/analytics/llm/chat', {
+        message: messageText,
+        context: lastContext,
+      })
+
       const aiMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        text: `AI анализирует данные файла ${fileInfo?.name} и предлагает:\n• Сфокусироваться на узких местах\n• Проверить конфигурацию ресурсов\n• Оценить влияние недавних симуляций`,
+        text: response.data.answer || 'LLM не вернул ответ.',
       }
       setChat((prev) => [...prev, aiMessage])
+    } catch (error: any) {
+      const errText =
+        error.response?.data?.detail || error.message || 'Ошибка при обращении к LLM'
+      const errorMessage: ChatMessage = {
+        id: `assistant-error-${Date.now()}`,
+        role: 'assistant',
+        text: `Не удалось получить ответ от LLM: ${errText}`,
+      }
+      setChat((prev) => [...prev, errorMessage])
+    } finally {
       setSending(false)
-    }, 600)
+    }
   }
 
   const processFile = async (file: File) => {
@@ -94,6 +110,17 @@ const PredictiveAnalytics = () => {
 
       const { results } = response.data
 
+      // Сохраняем "контекст" — запись с максимальной вероятностью задержки
+      if (results && results.length > 0) {
+        const valid = results.filter((r: ProcessPrediction) => !r.error && r.delay_probability != null)
+        if (valid.length > 0) {
+          const top = valid.reduce((acc: ProcessPrediction, cur: ProcessPrediction) =>
+            (cur.delay_probability || 0) > (acc.delay_probability || 0) ? cur : acc
+          , valid[0])
+          setLastContext(top)
+        }
+      }
+
       // Формируем короткое сообщение без списка
       const resultText = `Файл «${file.name}» обработан.\n\nПредсказания нейросети:`
 
@@ -106,6 +133,28 @@ const PredictiveAnalytics = () => {
 
       setChat((prev) => [...prev, systemMessage])
       setChatUnlocked(true)
+
+      // Запрашиваем первичное объяснение у LLM
+      try {
+        const explainResponse = await axios.post('/analytics/llm/explain-file', {
+          results,
+        })
+        const explainMessage: ChatMessage = {
+          id: `llm-explain-${Date.now()}`,
+          role: 'assistant',
+          text: explainResponse.data.explanation || 'LLM не вернул объяснение.',
+        }
+        setChat((prev) => [...prev, explainMessage])
+      } catch (error: any) {
+        const errText =
+          error.response?.data?.detail || error.message || 'Ошибка при получении объяснения от LLM'
+        const errorMessage: ChatMessage = {
+          id: `llm-explain-error-${Date.now()}`,
+          role: 'assistant',
+          text: `Не удалось получить объяснение от LLM: ${errText}`,
+        }
+        setChat((prev) => [...prev, errorMessage])
+      }
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.detail || error.message || 'Ошибка при обработке файла'

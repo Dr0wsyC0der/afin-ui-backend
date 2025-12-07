@@ -1,0 +1,33 @@
+fastapi
+uvicorn
+requests
+lightgbm==4.5.0
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+joblib==1.4.2
+
+torch>=2.0.0
+
+# HuggingFace stack
+transformers>=4.36.0
+accelerate
+datasets
+huggingface_hub
+
+# LoRA (PEFT)
+peft
+
+# Для работы с Qwen2 и 8-bit/4-bit quantization
+bitsandbytes
+
+# Для корректной работы токенизаторов
+sentencepiece
+tiktoken
+
+# Иногда требуется для загрузки моделей Qwen
+protobuf
+
+# Дополнительные библиотеки, которые используются в коде:
+pydantic>=2.0.0  # для BaseModel в FastAPI
+typing-extensions  # для современных аннотаций типов
