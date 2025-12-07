@@ -155,6 +155,88 @@ async def import_bpmn(
         raise HTTPException(status_code=400, detail=f"BPMN parse error: {exc}") from exc
 
 
+@router.post("/import/json")
+async def import_json(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Импорт модели из JSON файла (массив задач)"""
+    import json
+    content = await file.read()
+    try:
+        json_data = json.loads(content.decode())
+        items = json_data if isinstance(json_data, list) else [json_data]
+        
+        # Создаем структуру модели с пулами и задачами
+        departments = set(item.get("department", "Procurement") for item in items)
+        
+        # Создаем пулы
+        pools = []
+        pool_positions = {}
+        for idx, dept in enumerate(sorted(departments)):
+            pool_id = f"pool-{idx}"
+            pools.append({
+                "id": pool_id,
+                "type": "pool",
+                "position": {"x": 100, "y": 100 + idx * 300},
+                "data": {
+                    "label": dept,
+                    "type": "pool",
+                    "department": dept,
+                }
+            })
+            pool_positions[dept] = {"x": 100, "y": 100 + idx * 300}
+        
+        # Создаем задачи
+        tasks = []
+        task_counts = {}
+        for idx, item in enumerate(items):
+            dept = item.get("department", "Procurement")
+            if dept not in task_counts:
+                task_counts[dept] = 0
+            
+            pool_pos = pool_positions.get(dept, {"x": 100, "y": 100})
+            task_id = f"task-{idx}"
+            tasks.append({
+                "id": task_id,
+                "type": "task",
+                "position": {
+                    "x": pool_pos["x"] + 50,
+                    "y": pool_pos["y"] + 100 + task_counts[dept] * 120,
+                },
+                "data": {
+                    "label": item.get("process_name", "Задача"),
+                    "type": "task",
+                    "process_name": item.get("process_name", ""),
+                    "comment": item.get("comment", ""),
+                    "expected_duration": item.get("expected_duration", 60),
+                    "month": item.get("month"),
+                    "weekday": item.get("weekday"),
+                    "status": item.get("status", "active"),
+                    "department": dept,
+                    "role": item.get("role", "specialist"),
+                }
+            })
+            task_counts[dept] += 1
+        
+        model_data = {
+            "nodes": pools + tasks,
+            "edges": []
+        }
+        
+        model_in = schemas.ModelCreate(
+            name=file.filename or "Импортированная модель",
+            data=model_data,
+        )
+        created = crud.create_model(db, model_in, current_user.id)
+        return serialize_model(db, created)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"JSON parse error: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Import error: {exc}") from exc
+
+
 @router.get("/{model_id}/export/bpmn")
 def export_bpmn(
     model_id: int,

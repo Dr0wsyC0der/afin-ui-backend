@@ -1,4 +1,4 @@
-import { DragEvent, useRef, useState } from 'react'
+import { DragEvent, useRef, useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { MessageSquare, Send, Sparkles, UploadCloud, Loader2 } from 'lucide-react'
 import axios from 'axios'
@@ -40,7 +40,71 @@ const PredictiveAnalytics = () => {
   const [processing, setProcessing] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [lastContext, setLastContext] = useState<ProcessPrediction | null>(null)
+  const [models, setModels] = useState<any[]>([])
+  const [selectedModelId, setSelectedModelId] = useState<string>('')
+  const [loadingModels, setLoadingModels] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    loadModels()
+  }, [])
+
+  const loadModels = async () => {
+    try {
+      setLoadingModels(true)
+      const response = await axios.get('/process-models')
+      setModels(response.data)
+    } catch (error) {
+      console.error('Ошибка загрузки моделей:', error)
+    } finally {
+      setLoadingModels(false)
+    }
+  }
+
+  const handleModelSelect = async (modelId: string) => {
+    if (!modelId) {
+      setSelectedModelId('')
+      return
+    }
+
+    try {
+      setSelectedModelId(modelId)
+      const response = await axios.get(`/process-models/${modelId}`)
+      const model = response.data
+      
+      // Экспортируем задачи из модели в JSON формат
+      const tasks = (model.data?.nodes || [])
+        .filter((node: any) => node.type === 'task')
+        .map((node: any) => {
+          const data = node.data || {}
+          return {
+            process_name: data.process_name || data.label || 'Задача',
+            comment: data.comment || '',
+            expected_duration: data.expected_duration || 60,
+            month: data.month,
+            weekday: data.weekday,
+            status: data.status || 'active',
+            department: data.department || 'Procurement',
+            role: data.role || 'specialist',
+          }
+        })
+
+      if (tasks.length === 0) {
+        alert('В выбранной модели нет задач')
+        return
+      }
+
+      // Создаем файл из модели
+      const jsonContent = JSON.stringify(tasks, null, 2)
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      const file = new File([blob], `model_${modelId}.json`, { type: 'application/json' })
+      
+      validateAndStoreFile(file)
+    } catch (error) {
+      console.error('Ошибка загрузки модели:', error)
+      alert('Ошибка при загрузке модели')
+    }
+  }
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} Б`
@@ -225,10 +289,35 @@ const PredictiveAnalytics = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Файл с данными</h2>
-                <p className="text-sm text-gray-500">Перетащите CSV/JSON или выберите вручную</p>
+                <p className="text-sm text-gray-500">Перетащите CSV/JSON или выберите модель</p>
               </div>
               <UploadCloud className="w-6 h-6 text-primary" />
             </div>
+            
+            {/* Выбор модели */}
+            {models.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Или выберите модель процесса:
+                </label>
+                <select
+                  value={selectedModelId}
+                  onChange={(e) => handleModelSelect(e.target.value)}
+                  disabled={loadingModels || processing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">-- Выберите модель --</option>
+                  {models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} {model.version ? `(v${model.version})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {loadingModels && (
+                  <p className="text-xs text-gray-500 mt-1">Загрузка моделей...</p>
+                )}
+              </div>
+            )}
             <label
               onDragOver={(e) => {
                 e.preventDefault()
