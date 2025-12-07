@@ -25,6 +25,7 @@ import {
   Upload,
   FileJson,
   FileCode,
+  Trash2,
 } from 'lucide-react'
 
 // Типы данных
@@ -576,6 +577,59 @@ const ProcessEditor = () => {
     setSelectedNode(node)
   }
 
+  const handleDeleteNode = useCallback(() => {
+    if (!selectedNode) return
+    
+    if (confirm(`Вы уверены, что хотите удалить "${selectedNode.data.label}"?`)) {
+      const nodeToDelete = selectedNode
+      
+      // Удаляем узел
+      setNodes((nds) => {
+        let filtered = nds.filter((node) => node.id !== nodeToDelete.id)
+        
+        // Если это пул, удаляем также все связанные задачи
+        if (nodeToDelete.type === 'pool') {
+          const poolData = nodeToDelete.data as PoolData
+          filtered = filtered.filter((node) => {
+            if (node.type === 'task') {
+              const taskData = node.data as TaskData
+              return taskData.department !== poolData.department
+            }
+            return true
+          })
+        }
+        
+        return filtered
+      })
+      
+      // Удаляем связанные рёбра
+      setEdges((eds) => 
+        eds.filter((edge) => 
+          edge.source !== nodeToDelete.id && edge.target !== nodeToDelete.id
+        )
+      )
+      
+      setSelectedNode(null)
+    }
+  }, [selectedNode, setNodes, setEdges, setSelectedNode])
+
+  // Обработчик клавиши Delete
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNode) {
+        // Предотвращаем удаление, если фокус в поле ввода
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+          return
+        }
+        event.preventDefault()
+        handleDeleteNode()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedNode, handleDeleteNode])
+
   if (loading) {
     return (
       <Layout>
@@ -689,12 +743,24 @@ const ProcessEditor = () => {
 
           {/* Properties Panel */}
           <div className="w-96 bg-white border-l p-4 overflow-y-auto">
-            <h3 className="font-semibold text-gray-900 mb-4">Свойства</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Свойства</h3>
+              {selectedNode && (
+                <button
+                  onClick={handleDeleteNode}
+                  className="flex items-center space-x-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+                  title="Удалить элемент (Delete)"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Удалить</span>
+                </button>
+              )}
+            </div>
             {selectedNode ? (
               selectedNode.type === 'pool' ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Название пула
                     </label>
                     <select
